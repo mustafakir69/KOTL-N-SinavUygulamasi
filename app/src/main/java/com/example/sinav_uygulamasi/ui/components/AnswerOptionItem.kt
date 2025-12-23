@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.sinav_uygulamasi.ui.design.AppColors
 import com.example.sinav_uygulamasi.ui.design.Dimens
@@ -73,11 +74,13 @@ fun AnswerOptionItem(
             Spacer(Modifier.width(12.dp))
 
             Text(
-                text,
+                text = text,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
-                color = AppColors.TextDark
+                color = AppColors.TextDark,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
 
             if (isAnswered) {

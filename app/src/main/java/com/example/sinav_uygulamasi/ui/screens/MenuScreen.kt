@@ -1,12 +1,32 @@
 package com.example.sinav_uygulamasi.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,11 +35,24 @@ import androidx.compose.ui.unit.dp
 import com.example.sinav_uygulamasi.QuizType
 import com.example.sinav_uygulamasi.QuizUiState
 import com.example.sinav_uygulamasi.QuizViewModel
+import com.example.sinav_uygulamasi.ui.components.ContentContainer
 import com.example.sinav_uygulamasi.ui.components.ExamHistoryCard
 import com.example.sinav_uygulamasi.ui.components.QuizTypeCard
 import com.example.sinav_uygulamasi.ui.components.ScorePill
 import com.example.sinav_uygulamasi.ui.design.AppColors
 import com.example.sinav_uygulamasi.ui.design.Dimens
+
+private fun historyBadge(entry: String): String {
+    val type = entry.substringAfter("Tür:", "").substringBefore("|").trim()
+
+    return when {
+        type.contains("Kotlin", ignoreCase = true) -> "KT"
+        type.contains("Jetpack", ignoreCase = true) || type.contains("Compose", ignoreCase = true) -> "JC"
+        type.contains("Karışık", ignoreCase = true) || type.contains("Karisik", ignoreCase = true) -> "K"
+        else -> "S"
+    }
+}
+
 
 private fun iconBg(type: QuizType): Color = when (type) {
     QuizType.KOTLIN -> AppColors.Kotlin
@@ -47,21 +80,7 @@ private fun historySubtitle(entry: String): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
-
     val cfg = LocalConfiguration.current
-    val screenWidthDp = cfg.screenWidthDp
-    val screenHeightDp = cfg.screenHeightDp
-    val isLandscape = screenWidthDp > screenHeightDp
-
-    val contentMaxWidth = when {
-        screenWidthDp >= 1000 -> 1100.dp
-        screenWidthDp >= 700 -> 900.dp
-        else -> 640.dp
-    }
-
-    // ✅ Tablet landscape: sola yasla, diğer durumlar: ortala
-    val listAlign = if (isLandscape) Alignment.TopStart else Alignment.TopCenter
-
     var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -77,27 +96,24 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
             )
         }
     ) { pad ->
-        Box(
+        ContentContainer(
+            screenWidthDp = cfg.screenWidthDp,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(pad)
+                .padding(Dimens.ScreenPadding)
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .align(listAlign)
-                    .padding(Dimens.ScreenPadding)
-                    .fillMaxWidth()               // önce ekranı doldur
-                    .widthIn(max = contentMaxWidth),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(Dimens.Gap),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 item {
                     ElevatedCard(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.BigRadius),
+                        shape = RoundedCornerShape(Dimens.BigRadius),
                         colors = CardDefaults.elevatedCardColors(containerColor = AppColors.Card)
                     ) {
-                        Column(
+                        androidx.compose.foundation.layout.Column(
                             Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
@@ -147,7 +163,6 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
                             color = AppColors.TextDark,
                             modifier = Modifier.weight(1f)
                         )
-
                         TextButton(
                             onClick = { showClearDialog = true },
                             enabled = s.examHistory.isNotEmpty()
@@ -159,7 +174,7 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
                 if (history.isEmpty()) {
                     item {
                         ElevatedCard(
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.CardRadius),
+                            shape = RoundedCornerShape(Dimens.CardRadius),
                             colors = CardDefaults.elevatedCardColors(containerColor = AppColors.CardWarm)
                         ) {
                             Text(
@@ -173,10 +188,12 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
                 } else {
                     items(history) { entry ->
                         ExamHistoryCard(
+                            badgeText = historyBadge(entry),
                             title = historyTitle(entry),
                             subtitle = historySubtitle(entry)
                         )
                     }
+
                 }
             }
 

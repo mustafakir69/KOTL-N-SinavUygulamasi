@@ -1,7 +1,11 @@
 package com.example.sinav_uygulamasi
 
 import android.content.Context
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -10,14 +14,11 @@ private val Context.dataStore by preferencesDataStore("quiz_prefs")
 
 data class PersistedStats(
     val lastSummary: String = "",
-
     val bestKotlin: Int = 0,
     val bestCompose: Int = 0,
     val bestMixed: Int = 0,
-
     val orangeTheme: Boolean = true,
     val largeText: Boolean = true,
-
     val examHistory: List<String> = emptyList()
 )
 
@@ -39,14 +40,11 @@ class PrefsDataStore(private val context: Context) {
     val flow: Flow<PersistedStats> = context.dataStore.data.map { p ->
         PersistedStats(
             lastSummary = p[K.lastSummary] ?: "",
-
             bestKotlin = p[K.bestKotlin] ?: 0,
             bestCompose = p[K.bestCompose] ?: 0,
             bestMixed = p[K.bestMixed] ?: 0,
-
             orangeTheme = p[K.orangeTheme] ?: true,
             largeText = p[K.largeText] ?: true,
-
             examHistory = p[K.examHistory]?.toList() ?: emptyList()
         )
     }
