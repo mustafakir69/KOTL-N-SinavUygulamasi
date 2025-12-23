@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.example.sinav_uygulamasi.QuizUiState
@@ -25,6 +26,23 @@ import com.example.sinav_uygulamasi.ui.design.Dimens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(s: QuizUiState, vm: QuizViewModel) {
+
+    val cfg = LocalConfiguration.current
+    val screenWidthDp = cfg.screenWidthDp
+    val screenHeightDp = cfg.screenHeightDp
+    val isLandscape = screenWidthDp > screenHeightDp
+
+    // ✅ responsive max width
+    val contentMaxWidth = when {
+        screenWidthDp >= 1000 -> 1100.dp
+        screenWidthDp >= 840 -> 840.dp    // tablet landscape
+        screenWidthDp >= 600 -> 720.dp    // tablet portrait
+        else -> 640.dp                    // telefon
+    }
+
+    // ✅ Landscape: köşeye yasla, Portrait: üst-orta
+    val listAlign = if (isLandscape) Alignment.TopStart else Alignment.TopCenter
+
     val haptic = LocalHapticFeedback.current
 
     val q = s.questions[s.currentIndex]
@@ -35,7 +53,9 @@ fun QuizScreen(s: QuizUiState, vm: QuizViewModel) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(s.selectedType.title, style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = { IconButton(onClick = { vm.goMenu() }) { Icon(Icons.Filled.Close, null) } },
+                navigationIcon = {
+                    IconButton(onClick = { vm.goMenu() }) { Icon(Icons.Filled.Close, null) }
+                },
                 actions = {
                     AssistChip(
                         onClick = {},
@@ -55,9 +75,10 @@ fun QuizScreen(s: QuizUiState, vm: QuizViewModel) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .align(Alignment.TopCenter)
+                    .align(listAlign)                 // ✅ değişti
                     .padding(Dimens.ScreenPadding)
-                    .widthIn(max = 640.dp),
+                    .fillMaxWidth()                   // ✅ eklendi: landscape’te kenara yaslı his
+                    .widthIn(max = contentMaxWidth),  // ✅ responsive
                 verticalArrangement = Arrangement.spacedBy(Dimens.Gap),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
@@ -108,11 +129,16 @@ fun QuizScreen(s: QuizUiState, vm: QuizViewModel) {
                 }
 
                 item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         OutlinedButton(
                             onClick = { vm.prev() },
                             enabled = (s.currentIndex > 0),
-                            modifier = Modifier.weight(1f).height(Dimens.ButtonHeight),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(Dimens.ButtonHeight),
                             shape = RoundedCornerShape(Dimens.ButtonRadius)
                         ) {
                             Text("Önceki", style = MaterialTheme.typography.titleMedium)
@@ -121,7 +147,9 @@ fun QuizScreen(s: QuizUiState, vm: QuizViewModel) {
                         Button(
                             onClick = { vm.next() },
                             enabled = (s.answers[s.currentIndex] != null),
-                            modifier = Modifier.weight(1f).height(Dimens.ButtonHeight),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(Dimens.ButtonHeight),
                             shape = RoundedCornerShape(Dimens.ButtonRadius),
                             colors = ButtonDefaults.buttonColors(containerColor = AppColors.Orange)
                         ) {

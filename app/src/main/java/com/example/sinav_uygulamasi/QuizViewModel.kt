@@ -35,6 +35,7 @@ data class QuizUiState(
 class QuizViewModel(app: Application) : AndroidViewModel(app) {
 
     private val store = PrefsDataStore(app.applicationContext)
+
     private val _ui = MutableStateFlow(QuizUiState())
     val ui: StateFlow<QuizUiState> = _ui.asStateFlow()
 
@@ -63,6 +64,10 @@ class QuizViewModel(app: Application) : AndroidViewModel(app) {
 
     fun saveSettings(orange: Boolean, large: Boolean) {
         viewModelScope.launch { store.saveSettings(orange, large) }
+    }
+
+    fun clearExamHistory() {
+        viewModelScope.launch { store.clearHistory() }
     }
 
     fun start() {

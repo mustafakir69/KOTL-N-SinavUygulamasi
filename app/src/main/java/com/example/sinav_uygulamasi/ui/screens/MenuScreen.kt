@@ -6,10 +6,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.sinav_uygulamasi.QuizType
 import com.example.sinav_uygulamasi.QuizUiState
@@ -46,6 +47,23 @@ private fun historySubtitle(entry: String): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
+
+    val cfg = LocalConfiguration.current
+    val screenWidthDp = cfg.screenWidthDp
+    val screenHeightDp = cfg.screenHeightDp
+    val isLandscape = screenWidthDp > screenHeightDp
+
+    val contentMaxWidth = when {
+        screenWidthDp >= 1000 -> 1100.dp
+        screenWidthDp >= 700 -> 900.dp
+        else -> 640.dp
+    }
+
+    // ✅ Tablet landscape: sola yasla, diğer durumlar: ortala
+    val listAlign = if (isLandscape) Alignment.TopStart else Alignment.TopCenter
+
+    var showClearDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -67,9 +85,10 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .align(Alignment.TopCenter)
+                    .align(listAlign)
                     .padding(Dimens.ScreenPadding)
-                    .widthIn(max = 640.dp),
+                    .fillMaxWidth()               // önce ekranı doldur
+                    .widthIn(max = contentMaxWidth),
                 verticalArrangement = Arrangement.spacedBy(Dimens.Gap),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
@@ -118,7 +137,22 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
                 }
 
                 item {
-                    Text("Sınav Geçmişi", style = MaterialTheme.typography.titleLarge, color = AppColors.TextDark)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Sınav Geçmişi",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = AppColors.TextDark,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        TextButton(
+                            onClick = { showClearDialog = true },
+                            enabled = s.examHistory.isNotEmpty()
+                        ) { Text("Temizle") }
+                    }
                 }
 
                 val history = s.examHistory.reversed()
@@ -144,6 +178,25 @@ fun MenuScreen(s: QuizUiState, vm: QuizViewModel) {
                         )
                     }
                 }
+            }
+
+            if (showClearDialog) {
+                AlertDialog(
+                    onDismissRequest = { showClearDialog = false },
+                    title = { Text("Sınav geçmişi temizlensin mi?") },
+                    text = { Text("Bu işlem geri alınamaz.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                vm.clearExamHistory()
+                                showClearDialog = false
+                            }
+                        ) { Text("Evet, temizle") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showClearDialog = false }) { Text("Vazgeç") }
+                    }
+                )
             }
         }
     }

@@ -15,8 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.sinav_uygulamasi.QuizUiState
 import com.example.sinav_uygulamasi.QuizViewModel
@@ -32,100 +34,152 @@ fun ResultScreen(s: QuizUiState, vm: QuizViewModel) {
     val wrongs = remember(s.questions, s.answers) { vm.buildWrongReview() }
     val (score, total) = remember(s.questions, s.answers) { vm.getScorePair() }
 
+    val cfg = LocalConfiguration.current
+    val screenWidthDp = cfg.screenWidthDp
+    val screenHeightDp = cfg.screenHeightDp
+    val isLandscape = screenWidthDp > screenHeightDp
+
+    val contentMaxWidth = when {
+        screenWidthDp >= 1000 -> 1100.dp
+        screenWidthDp >= 700 -> 900.dp
+        else -> 640.dp
+    }
+
+    val contentAlign = if (isLandscape) Alignment.TopStart else Alignment.TopCenter
+
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { CenterAlignedTopAppBar(title = { Text("Sonuç", style = MaterialTheme.typography.titleLarge) }) }
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Sonuç", style = MaterialTheme.typography.titleLarge) }
+            )
+        }
     ) { pad ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(pad)
         ) {
-            LazyColumn(
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .align(Alignment.TopCenter)
-                    .padding(Dimens.ScreenPadding)
-                    .widthIn(max = 640.dp),
-                verticalArrangement = Arrangement.spacedBy(Dimens.Gap),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                    .fillMaxSize()
+                    .padding(Dimens.ScreenPadding),
+                contentAlignment = contentAlign // ✅ landscape: sol-üst
             ) {
-                item {
-                    ElevatedCard(
-                        shape = RoundedCornerShape(Dimens.CardRadius),
-                        colors = CardDefaults.elevatedCardColors(containerColor = AppColors.Card),
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 10.dp)
-                    ) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Özet", style = MaterialTheme.typography.titleLarge, color = AppColors.TextDark)
-                            Text("Skor: $score/$total", style = MaterialTheme.typography.bodyLarge, color = AppColors.TextDark)
-                            Text("Süre: ${s.elapsedSeconds}s", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextMid)
-                        }
-                    }
-                }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()                  // ✅ kenara yaslı his
+                        .widthIn(max = contentMaxWidth), // ✅ max width
+                    verticalArrangement = Arrangement.spacedBy(Dimens.Gap),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
 
-                if (wrongs.isNotEmpty()) {
                     item {
-                        Text("Yanlışlar", style = MaterialTheme.typography.titleLarge, color = AppColors.TextDark)
-                    }
-
-                    items(wrongs) { r ->
                         ElevatedCard(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.elevatedCardColors(containerColor = AppColors.Card)
+                            shape = RoundedCornerShape(Dimens.CardRadius),
+                            colors = CardDefaults.elevatedCardColors(containerColor = AppColors.Card),
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 10.dp)
                         ) {
-                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(r.questionText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Column(
+                                Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("Özet", style = MaterialTheme.typography.titleLarge, color = AppColors.TextDark)
+                                Text("Skor: $score/$total", style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    "Senin cevabın: ${r.selectedText ?: "Boş"}",
+                                    "Süre: ${s.elapsedSeconds}s",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = AppColors.WrongBorder
-                                )
-                                Text(
-                                    "Doğru cevap: ${r.correctText}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = AppColors.CorrectBorder
+                                    color = AppColors.TextMid
                                 )
                             }
                         }
                     }
-                }
 
-                item {
-                    ActionButton(
-                        text = "Tekrar Başla",
-                        icon = Icons.Filled.Refresh,
-                        color = AppColors.Restart,
-                        onClick = { vm.restartSame() },
-                        modifier = Modifier.fillMaxWidth().height(Dimens.ButtonHeight)
-                    )
-                }
+                    if (wrongs.isNotEmpty()) {
+                        item {
+                            Text("Yanlışlar", style = MaterialTheme.typography.titleLarge, color = AppColors.TextDark)
+                        }
 
-                item {
-                    ActionButton(
-                        text = "Ana Menüye Dön",
-                        icon = Icons.Filled.Home,
-                        color = AppColors.Home,
-                        onClick = { vm.goMenu() },
-                        modifier = Modifier.fillMaxWidth().height(Dimens.ButtonHeight)
-                    )
-                }
-
-                item {
-                    ActionButton(
-                        text = "Paylaş",
-                        icon = Icons.Filled.Share,
-                        color = AppColors.Share,
-                        onClick = {
-                            val text = vm.getScoreText()
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, text)
+                        items(wrongs) { r ->
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 108.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.elevatedCardColors(containerColor = AppColors.Card)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        r.questionText,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        "Senin cevabın: ${r.selectedText ?: "Boş"}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = AppColors.WrongBorder,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        "Doğru cevap: ${r.correctText}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = AppColors.CorrectBorder,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
-                            context.startActivity(Intent.createChooser(intent, "Paylaş"))
-                        },
-                        modifier = Modifier.fillMaxWidth().height(Dimens.ButtonHeight)
-                    )
+                        }
+                    }
+
+                    item {
+                        ActionButton(
+                            text = "Tekrar Başla",
+                            icon = Icons.Filled.Refresh,
+                            color = AppColors.Restart,
+                            onClick = { vm.restartSame() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimens.ButtonHeight)
+                        )
+                    }
+
+                    item {
+                        ActionButton(
+                            text = "Ana Menüye Dön",
+                            icon = Icons.Filled.Home,
+                            color = AppColors.Home,
+                            onClick = { vm.goMenu() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimens.ButtonHeight)
+                        )
+                    }
+
+                    item {
+                        ActionButton(
+                            text = "Paylaş",
+                            icon = Icons.Filled.Share,
+                            color = AppColors.Share,
+                            onClick = {
+                                val text = vm.getScoreText()
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, text)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Paylaş"))
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimens.ButtonHeight)
+                        )
+                    }
                 }
             }
         }

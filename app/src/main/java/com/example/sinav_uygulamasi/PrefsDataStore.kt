@@ -51,7 +51,6 @@ class PrefsDataStore(private val context: Context) {
         )
     }
 
-    // ✅ artık sadece 2 ayar var
     suspend fun saveSettings(orange: Boolean, large: Boolean) {
         context.dataStore.edit {
             it[K.orangeTheme] = orange
@@ -78,6 +77,8 @@ class PrefsDataStore(private val context: Context) {
     }
 
     suspend fun clearHistory() {
-        context.dataStore.edit { p -> p[K.examHistory] = emptySet() }
+        context.dataStore.edit { p ->
+            p[K.examHistory] = emptySet()
+        }
     }
 }
